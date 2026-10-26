@@ -1,13 +1,13 @@
 claude-code-send-gate: test transcript
-Run date: 2026-10-26T00:15Z   Host: Darwin 24.1.0   Node: v22.23.1
+Run date: 2026-10-26T19:39Z   Host: Darwin 24.1.0   Node: v22.23.1
 All installer checks ran against a temporary HOME directory, never a real one. Paths are shortened:
   <repo> = the send-gate folder, $HOME = the temporary home used for that scenario.
 This file is identical in the repo and in the zip. Regenerate it with: node playbook-src/make-installer-transcript.mjs
 ============================================================
 
 === Byte-identical check: free-gate copies vs the paid kit copies of the same four files ===
-d503080e37681ae0ce6a4d6ee481899adb975467c4eb597cacaa4a5212e0893f  kit/hooks/send-gate.mjs
-d503080e37681ae0ce6a4d6ee481899adb975467c4eb597cacaa4a5212e0893f  free-gate/hooks/send-gate.mjs
+b68b7473ca1b11ba75a3368a044bdbeadd346253f65bbed5c46cd05c6dba3b9c  kit/hooks/send-gate.mjs
+b68b7473ca1b11ba75a3368a044bdbeadd346253f65bbed5c46cd05c6dba3b9c  free-gate/hooks/send-gate.mjs
   PASS  identical hooks/send-gate.mjs (got: yes)
 0680ce8c60698c914f45b278c4201b70ad7236a3f7c7a58021cd688fe2abdabb  kit/bin/approve-send.mjs
 0680ce8c60698c914f45b278c4201b70ad7236a3f7c7a58021cd688fe2abdabb  free-gate/bin/approve-send.mjs
@@ -15,12 +15,12 @@ d503080e37681ae0ce6a4d6ee481899adb975467c4eb597cacaa4a5212e0893f  free-gate/hook
 fc64fb4d68051fa423ed946e72a415fa8e9333c34720c5320e9eec1100918f97  kit/bin/away-mode.mjs
 fc64fb4d68051fa423ed946e72a415fa8e9333c34720c5320e9eec1100918f97  free-gate/bin/away-mode.mjs
   PASS  identical bin/away-mode.mjs (got: yes)
-14d999293db01a9aec71f00f77fc67172a0bc5dce34999786433ec0b3d53476b  kit/tests/test-send-gate.mjs
-14d999293db01a9aec71f00f77fc67172a0bc5dce34999786433ec0b3d53476b  free-gate/tests/test-send-gate.mjs
+e818295f70987fc3c85ab670cba7e5582e773591e2bcd3ecafc24691c1232490  kit/tests/test-send-gate.mjs
+e818295f70987fc3c85ab670cba7e5582e773591e2bcd3ecafc24691c1232490  free-gate/tests/test-send-gate.mjs
   PASS  identical tests/test-send-gate.mjs (got: yes)
 
 === Test suite from free-gate/ ===
-145 passed, 0 failed
+156 passed, 0 failed
   PASS  suite exit code (got: 0)
 
 ################ SCENARIO 1: dry run on an empty HOME ################

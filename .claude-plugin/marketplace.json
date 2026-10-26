@@ -1,0 +1,14 @@
+{
+  "name": "send-gate",
+  "description": "A PreToolUse hook that blocks sends, posts and payments until a human approves the exact action.",
+  "owner": {
+    "name": "Kyle Kanooth"
+  },
+  "plugins": [
+    {
+      "name": "send-gate",
+      "source": "./",
+      "description": "Blocks tool calls that send a message, publish a post, or move money unless you approved that action a moment ago."
+    }
+  ]
+}

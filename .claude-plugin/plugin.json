@@ -1,0 +1,14 @@
+{
+  "name": "send-gate",
+  "displayName": "Send Gate",
+  "version": "1.1.0",
+  "description": "PreToolUse hook that blocks tool calls which send a message, publish a post, or move money until a human approves that exact action in their own terminal with a single-use code.",
+  "author": {
+    "name": "Kyle Kanooth",
+    "url": "https://github.com/Kylefrc"
+  },
+  "homepage": "https://github.com/Kylefrc/claude-code-send-gate",
+  "repository": "https://github.com/Kylefrc/claude-code-send-gate",
+  "license": "MIT",
+  "keywords": ["hooks", "safety", "approval", "send-gate", "guardrails"]
+}

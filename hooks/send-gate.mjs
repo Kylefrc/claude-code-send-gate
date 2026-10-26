@@ -64,7 +64,8 @@ const toRegexes = (list) => (Array.isArray(list) ? list : []).flatMap((s) => {
 // create_draft, list_sent, get_post, search_messages, list_invoices pass. Drafts save; they do not send.
 const SEND_WORDS = new Set(['send', 'reply', 'forward', 'publish', 'tweet', 'post', 'submit', 'pay',
   'payment', 'charge', 'refund', 'transfer', 'payout', 'sms', 'dial', 'order', 'broadcast',
-  'invoice', 'finalize', 'void', 'cancel', 'comment', 'merge', 'schedule', 'book', 'notify', 'invite', 'enroll']);
+  'invoice', 'finalize', 'void', 'cancel', 'comment', 'merge', 'schedule', 'book', 'notify', 'invite', 'enroll',
+  'buy', 'purchase', 'checkout']);
 const READ_WORDS = new Set(['list', 'get', 'read', 'search', 'find', 'fetch', 'query', 'lookup',
   'preview', 'retrieve', 'describe', 'count', 'status', 'history', 'view', 'show']);
 const extraGated = toRegexes(cfg.extraGatedTools);
@@ -241,7 +242,7 @@ function bashIsGated(cmd) {
 
 // ---------- 3. Browser JS ----------
 // Only a positive Send indicator is gated, so page reads and draft-saving still work.
-const SEND_BUTTON_RE = /((aria-label|title|data-tooltip|innerText|textContent|name)\s*[*^$~|]?=?\s*\(?\s*['"`]\s*(send|send now|post|publish|pay|submit payment|place order)\s*['"`])|(\.click\(\)[^\n]{0,120}\b(send|publish|pay)\b)|(\b(send|publish|pay)\w*\b[^\n]{0,120}\.click\(\))/i;
+const SEND_BUTTON_RE = /((aria-label|title|data-tooltip|innerText|textContent|name)\s*[*^$~|]?=?\s*\(?\s*['"`]\s*(send|send now|post|publish|pay|submit payment|place order|buy|buy now|purchase|checkout|check out)\b[^'"`\n]{0,40}['"`])|(\.click\(\)[^\n]{0,120}\b(send|publish|pay|buy|purchase|checkout)\b)|(\b(send|publish|pay|buy|purchase|checkout)\w*\b[^\n]{0,120}\.click\(\))/i;
 function browserIsGated(name, input) {
   if (!/javascript|evaluate_script|execute_script/i.test(name)) return false;
   const code = String(input.text || input.code || input.function || input.expression || input.script || '');
@@ -253,9 +254,9 @@ function browserIsGated(name, input) {
 // not a wall: the wall is that approve-send.mjs needs a code typed at a real terminal. A determined
 // process can still dodge the text match (build the file name from pieces) and allocate its own pty.
 const SELF_APPROVE_RE = /approve-send|send-approved|away\.flag|away-mode(\.mjs)?["']?\s+off\b|(^|[\s/"'])uninstall\.mjs|install-gate\.mjs["']?\s+--uninstall/i;
-const GATE_FILE_RE = /(^|[\s/"'=])send-gate\.(mjs|json)\b/;
+const GATE_FILE_RE = /(^|[\s/"'=])send-gate\.(mjs|json)\b|\.claude\/settings(\.local)?\.json\b/;
 const WRITE_VERB_RE = /(>|\btee\b|\bsed\s+-\S*i|\bmv\b|\bcp\b|\brm\b|\btruncate\b|\bperl\s+-\S*i|\bchmod\b|\bln\b|\bdd\b|writeFile|appendFile|unlink|rename|rmSync|open\([^)]*['"][wa])/;
-const PROTECTED_PATH_RE = /(^|\/)\.claude\/(send-gate\.json|away\.flag|hooks\/send-gate\.mjs|bin\/(approve-send|away-mode)\.mjs|state\/send-gate(\/|$))/;
+const PROTECTED_PATH_RE = /(^|\/)\.claude\/(settings(\.local)?\.json|send-gate\.json|away\.flag|hooks\/send-gate\.mjs|bin\/(approve-send|away-mode)\.mjs|state\/send-gate(\/|$))/;
 // Building a pseudo-terminal is the one way a process can type the approval code itself.
 const PTY_RE = /\b(pty\.(fork|spawn|openpty)|openpty|forkpty|pexpect|node-pty)\b|\bunbuffer\b|(^|[\s;&|])script\s+(-\S+\s+)*\/dev\/null|\bexpect\s+(-\S+\s+)*-[cf]\b/;
 function selfApprovalAttempt() {

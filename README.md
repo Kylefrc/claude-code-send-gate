@@ -2,7 +2,7 @@
 
 A Claude Code PreToolUse hook that blocks tool calls which send a message, publish a post, or move money, unless you approved that specific action a moment ago.
 
-Dependency-free Node (20 or newer), MIT licensed, 145 regression tests. Independent project, not affiliated with or endorsed by Anthropic.
+Dependency-free Node (20 or newer), MIT licensed, 156 regression tests. Independent project, not affiliated with or endorsed by Anthropic.
 
 ## The problem
 
@@ -33,9 +33,9 @@ Before any of that, a guard denies a call that would approve a send, lift away m
 
 What counts as a send:
 
-- MCP tools. The tool name is split into words (`send_email`, `chatPostMessage`). It is gated when a send, pay or notify word appears (send, reply, forward, publish, tweet, post, submit, pay, charge, refund, transfer, payout, sms, dial, order, broadcast, invoice, finalize, void, cancel, comment, merge, schedule, book, notify, invite, enroll) and no read word (list, get, read, search, find, fetch, query, ...) comes before it. `send_email`, `create_refund`, `finalize_invoice` and `merge_pull_request` are blocked. `create_draft`, `list_sent_messages`, `list_invoices` and `get_order` pass. Drafts save; they do not send.
+- MCP tools. The tool name is split into words (`send_email`, `chatPostMessage`). It is gated when a send, pay, buy or notify word appears (send, reply, forward, publish, tweet, post, submit, pay, charge, refund, transfer, payout, sms, dial, order, broadcast, invoice, finalize, void, cancel, comment, merge, schedule, book, notify, invite, enroll, buy, purchase, checkout) and no read word (list, get, read, search, find, fetch, query, ...) comes before it. `send_email`, `create_refund`, `finalize_invoice` and `merge_pull_request` are blocked. `create_draft`, `list_sent_messages`, `list_invoices` and `get_order` pass. Drafts save; they do not send.
 - Shell commands whose program is a sender: local mailers (`mail`, `sendmail`, `mutt`, `msmtp`), `osascript` scripts that send from Mail, Messages, Outlook or Slack, `gh issue|pr|release` writes and `gh api` writes, `aws ses|sns send/publish`, the `stripe` CLI's create/cancel/refund verbs, and curl, wget, python, node and similar that make a mutating HTTP call (POST, PUT, PATCH, DELETE, `-d`, `--data`, `--post-data`, `requests.post`) to a known mail, chat, SMS, CRM, accounting, scheduling or payment host, or call a send SDK (`smtplib`, Twilio `messages.create`). That includes calls hidden inside a script file the command runs. The program is what counts, so `git commit -m "fix sendmail handling"` and `grep "curl -X POST https://api.stripe.com" docs/` pass.
-- Browser-automation JavaScript that clicks a Send, Post, Publish or Pay button.
+- Browser-automation JavaScript that clicks a Send, Post, Publish, Pay, Buy or Checkout button.
 
 The token is a file, `~/.claude/state/send-gate/send-approved`. You mint it, in your own terminal window, not through Claude:
 
@@ -90,6 +90,25 @@ DENY	mcp__gmail__send_email :: SEND GATE: this action reaches a person or moves 
 DENY	mcp__gmail__send_email :: SEND GATE: away mode is ON, so nothing that reaches a person or moves money can run. ...
 ```
 
+## Install as a plugin
+
+If you would rather not run the installer, add it from the plugin marketplace in this repo. Inside Claude Code:
+
+```
+/plugin marketplace add Kylefrc/claude-code-send-gate
+/plugin install send-gate@send-gate
+```
+
+(On Claude Code 2.1.275 or later, `/plugin install send-gate --marketplace Kylefrc/claude-code-send-gate` does both steps.) Then run `/hooks` to confirm the `PreToolUse` entry is listed; start a new session if it is not. The hook runs from the plugin's own folder, so nothing is written to your `settings.json`.
+
+The approval script is not copied to `~/.claude/bin/` by the plugin, but the deny message points there. Copy the two scripts once, from the plugin folder, so the printed command works:
+
+```
+mkdir -p ~/.claude/bin && cp ~/.claude/plugins/cache/send-gate/send-gate/*/bin/*.mjs ~/.claude/bin/
+```
+
+Use the plugin or `install-gate.mjs`, not both. The approval token is single-use, so with two copies of the hook the first one consumes it and the second denies the call. To remove the plugin: `/plugin uninstall send-gate@send-gate`. The same Node 20+ and macOS or Linux notes as below apply, and the plugin route has been tested only through `claude plugin validate` and a local install, not on Windows.
+
 ## Install
 
 Needs Node 20 or newer (`node -v`) and Claude Code on macOS or Linux. On Windows, use WSL: the hook command in `settings.json` is a POSIX shell line.
@@ -118,10 +137,10 @@ Try it: ask Claude to send a test message through any connected mail or chat too
 
 ```
 $ node tests/test-send-gate.mjs
-145 passed, 0 failed
+156 passed, 0 failed
 ```
 
-Run on macOS (Darwin 24.1.0) with Node v20.11.0 and v22.23.1. The 145 cases are 83 classification checks (what is gated and what passes, including commands that only mention a sender), 6 token checks (one use, consumed, untouched by ungated calls, stale tokens denied and removed), 6 recipient-match checks, 3 away-mode checks, 26 self-approval guard checks, 8 config checks and 13 terminal checks (the approval scripts refuse without a terminal and work with one). Each case runs in a temporary HOME, so the suite never touches your real `~/.claude`. The terminal checks use `python3` to drive a pseudo-terminal; without it they are reported as skipped.
+Run on macOS (Darwin 24.1.0) with Node v20.11.0 and v22.23.1. The 156 cases are 89 classification checks (what is gated and what passes, including commands that only mention a sender), 6 token checks (one use, consumed, untouched by ungated calls, stale tokens denied and removed), 6 recipient-match checks, 3 away-mode checks, 31 self-approval guard checks, 8 config checks and 13 terminal checks (the approval scripts refuse without a terminal and work with one). Each case runs in a temporary HOME, so the suite never touches your real `~/.claude`. The terminal checks use `python3` to drive a pseudo-terminal; without it they are reported as skipped.
 
 What the tests are: the hook run directly with sample JSON payloads. What they are not: a Claude Code session, or proof that every tool in your setup is covered. Passing means those named cases behave as written. After you install, ask Claude to attempt a send with each of your own tools and watch what happens.
 
@@ -131,9 +150,9 @@ What the tests are: the hook run directly with sample JSON payloads. What they a
 
 Catches, out of the box:
 
-- MCP tools with a send, pay or notify word in the name and no read word before it (including invoice, finalize, void, cancel, comment, merge, schedule)
+- MCP tools with a send, pay, buy or notify word in the name and no read word before it (including invoice, finalize, void, cancel, comment, merge, schedule)
 - shell commands whose program is a sender: local mailers, `osascript` sends, `gh` issue, PR and release writes, `aws ses` and `aws sns`, the `stripe` CLI, and curl, wget, python or node calls that POST, PUT, PATCH or DELETE to Gmail, Microsoft Graph, SendGrid, Mailgun, Postmark, Resend, Twilio, Slack, Discord, Telegram, Stripe, Square, PayPal, Mailchimp, OpenPhone, Dialpad, HubSpot, Salesforce, Pipedrive, QuickBooks, Xero, Calendly and several more (the full list is `HOSTS` in the hook)
-- browser-automation scripts that click a Send, Post, Publish or Pay button
+- browser-automation scripts that click a Send, Post, Publish, Pay, Buy or Checkout button
 
 Cannot see, so cover these in your `CLAUDE.md` and your own review:
 
@@ -151,7 +170,7 @@ Limits of the design:
 - The approval step relies on `/dev/tty`. Claude's Bash tool has no terminal, so Claude cannot type the code. But any process that can run Python can open its own pseudo-terminal and type it (the test suite does exactly that to test the script). The hook therefore also denies commands, and scripts they run, that name `approve-send`, the token file, `away.flag` or the gate's own files, or that build a pseudo-terminal. That is text matching, and it can be dodged: in the headless run a split file name got past it (the terminal requirement still stopped the script). I did not try anything cleverer than that. This is a safeguard against mistakes, drift and over-eager automation, not a sandbox.
 - If the hook cannot read its own input (bad JSON on stdin), it exits 0 and lets the call through, so a broken payload does not stop your session.
 - Per the hooks docs, on PreToolUse a hook that times out does not block the call. The hook is a few file reads and finishes in milliseconds, but do not treat a stalled hook as a gate.
-- Settings that turn hooks off (`disableAllHooks`, or starting Claude Code with `--bare`) turn this off too, and so does anything that can edit your `settings.json`. A `permissions.ask` rule on `Bash(*approve-send*)` adds a second layer; the permission-modes docs say ask rules still prompt in bypass mode, and a deny rule and an ask rule held in a headless bypass run (see `LIVE-TEST.txt`).
+- Settings that turn hooks off (`disableAllHooks` set outside Claude Code, or starting Claude Code with `--bare`) turn this off too, and so does an edit to `settings.json` made outside Claude Code. The hook does block Claude's own Edit, Write and shell writes to `settings.json`, but a command that builds the file name from pieces can still dodge that text match. A `permissions.ask` rule on `Bash(*approve-send*)` adds a second layer; the permission-modes docs say ask rules still prompt in bypass mode, and a deny rule and an ask rule held in a headless bypass run (see `LIVE-TEST.txt`).
 
 ## Configuration
 
@@ -187,8 +206,11 @@ This removes the `PreToolUse` entry that references `send-gate.mjs` (other hooks
 hooks/send-gate.mjs         the hook
 bin/approve-send.mjs        mints a single-use approval token (needs a code typed at a terminal)
 bin/away-mode.mjs           on / off / status for the away flag (off needs a terminal)
-tests/test-send-gate.mjs    145 cases, runs in a temporary HOME
+tests/test-send-gate.mjs    156 cases, runs in a temporary HOME
 install-gate.mjs            installer / uninstaller
+.claude-plugin/plugin.json  plugin manifest
+.claude-plugin/marketplace.json  marketplace entry (source is this repo)
+hooks/hooks.json            plugin hook wiring (runs hooks/send-gate.mjs)
 TEST-TRANSCRIPT.txt         installer test transcript
 LIVE-TEST.txt               headless Claude Code run, bypass mode
 ```

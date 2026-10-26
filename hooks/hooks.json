@@ -1,0 +1,15 @@
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\" node \"${CLAUDE_PLUGIN_ROOT}/hooks/send-gate.mjs\" || { echo \"send-gate could not run, so this call is blocked. Usually node is not on PATH: start Claude Code from a normal terminal.\" >&2; exit 2; }",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
