@@ -1,0 +1,11 @@
+.DS_Store
+node_modules/
+*.log
+*.bak
+*.bak-*
+.env
+.env.*
+.claude/
+state/
+away.flag
+send-approved

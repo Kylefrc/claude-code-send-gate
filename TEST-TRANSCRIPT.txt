@@ -1,0 +1,234 @@
+claude-code-send-gate: test transcript
+Run date: 2026-10-26T00:15Z   Host: Darwin 24.1.0   Node: v22.23.1
+All installer checks ran against a temporary HOME directory, never a real one. Paths are shortened:
+  <repo> = the send-gate folder, $HOME = the temporary home used for that scenario.
+This file is identical in the repo and in the zip. Regenerate it with: node playbook-src/make-installer-transcript.mjs
+============================================================
+
+=== Byte-identical check: free-gate copies vs the paid kit copies of the same four files ===
+d503080e37681ae0ce6a4d6ee481899adb975467c4eb597cacaa4a5212e0893f  kit/hooks/send-gate.mjs
+d503080e37681ae0ce6a4d6ee481899adb975467c4eb597cacaa4a5212e0893f  free-gate/hooks/send-gate.mjs
+  PASS  identical hooks/send-gate.mjs (got: yes)
+0680ce8c60698c914f45b278c4201b70ad7236a3f7c7a58021cd688fe2abdabb  kit/bin/approve-send.mjs
+0680ce8c60698c914f45b278c4201b70ad7236a3f7c7a58021cd688fe2abdabb  free-gate/bin/approve-send.mjs
+  PASS  identical bin/approve-send.mjs (got: yes)
+fc64fb4d68051fa423ed946e72a415fa8e9333c34720c5320e9eec1100918f97  kit/bin/away-mode.mjs
+fc64fb4d68051fa423ed946e72a415fa8e9333c34720c5320e9eec1100918f97  free-gate/bin/away-mode.mjs
+  PASS  identical bin/away-mode.mjs (got: yes)
+14d999293db01a9aec71f00f77fc67172a0bc5dce34999786433ec0b3d53476b  kit/tests/test-send-gate.mjs
+14d999293db01a9aec71f00f77fc67172a0bc5dce34999786433ec0b3d53476b  free-gate/tests/test-send-gate.mjs
+  PASS  identical tests/test-send-gate.mjs (got: yes)
+
+=== Test suite from free-gate/ ===
+145 passed, 0 failed
+  PASS  suite exit code (got: 0)
+
+################ SCENARIO 1: dry run on an empty HOME ################
+HOME=$HOME
+$ node <repo>/install-gate.mjs --dry-run
+Installing the send gate into $HOME/.claude (dry run, nothing is written)
+  copy    .claude/hooks/send-gate.mjs
+  copy    .claude/bin/approve-send.mjs
+  copy    .claude/bin/away-mode.mjs
+  wire    PreToolUse -> send-gate.mjs
+
+Dry run only. Nothing was changed.
+  PASS  dry run created no .claude dir (got: none)
+
+################ SCENARIO 2: real install on an empty HOME ################
+
+$ node <repo>/install-gate.mjs
+Installing the send gate into $HOME/.claude
+  copy    .claude/hooks/send-gate.mjs
+  copy    .claude/bin/approve-send.mjs
+  copy    .claude/bin/away-mode.mjs
+  wire    PreToolUse -> send-gate.mjs
+
+Done. Next:
+  1. Run the tests: node "<repo>/tests/test-send-gate.mjs"   (expect: 0 failed)
+  2. In Claude Code, run /hooks to confirm the PreToolUse hook is listed. If it is not, start a new session.
+  3. Try it: ask Claude to send a test message through a connected mail or chat tool. It should be blocked.
+  4. To let one send through, run node ~/.claude/bin/approve-send.mjs "<recipient>" in your OWN terminal window (it asks you to type a code), then tell Claude to retry.
+  PASS  3 runtime files present (got: 3)
+  PASS  exactly 1 send-gate hook entry (got: 1)
+settings.json:
+{
+  "hooks": {
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "PATH=\"/usr/local/bin:/opt/homebrew/bin:$PATH\" node \"$HOME/.claude/hooks/send-gate.mjs\" || { echo \"send-gate could not run, so this call is blocked. Usually node is not on PATH: start Claude Code from a normal terminal.\" >&2; exit 2; }",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+
+$ node $HOME/.claude/bin/away-mode.mjs status
+Away mode is OFF.
+{"hookSpecificOutput":{"hookEventName":"PreToolUse","permissionDecision":"deny","permissionDecisionReason":"SEND GATE: this action reaches a person or moves mon ...(installed hook denies a send, as expected)
+  PASS  installed hook denies a send (got: deny)
+
+################ SCENARIO 3: repeat install (no duplicate hook) ################
+
+$ node <repo>/install-gate.mjs
+Installing the send gate into $HOME/.claude
+  keep    .claude/hooks/send-gate.mjs (already installed, identical)
+  keep    .claude/bin/approve-send.mjs (already installed, identical)
+  keep    .claude/bin/away-mode.mjs (already installed, identical)
+  keep    PreToolUse hook send-gate.mjs (already wired)
+
+Done. Next:
+  1. Run the tests: node "<repo>/tests/test-send-gate.mjs"   (expect: 0 failed)
+  2. In Claude Code, run /hooks to confirm the PreToolUse hook is listed. If it is not, start a new session.
+  3. Try it: ask Claude to send a test message through a connected mail or chat tool. It should be blocked.
+  4. To let one send through, run node ~/.claude/bin/approve-send.mjs "<recipient>" in your OWN terminal window (it asks you to type a code), then tell Claude to retry.
+  PASS  still exactly 1 send-gate hook entry (got: 1)
+  PASS  still 3 files (got: 3)
+  PASS  repeat install made no backup when nothing changed (got: none)
+
+################ SCENARIO 4: uninstall ################
+
+$ node <repo>/install-gate.mjs --uninstall
+Uninstalling the send gate from $HOME/.claude
+  backup  .claude/settings.json.bak-send-gate
+  unwire  PreToolUse send-gate.mjs (1 entry)
+  remove  .claude/hooks/send-gate.mjs
+  remove  .claude/bin/approve-send.mjs
+  remove  .claude/bin/away-mode.mjs
+
+Left in place on purpose: ~/.claude/send-gate.json (your config), ~/.claude/state/send-gate/ (the log), and any settings.json backup.
+Start a new Claude Code session so the hook stops loading.
+  PASS  0 runtime files left (got: 0)
+  PASS  0 send-gate hook entries (got: 0)
+settings.json:
+{}
+
+$ node <repo>/install-gate.mjs --uninstall
+Uninstalling the send gate from $HOME/.claude
+  keep    settings.json (no send-gate.mjs hook found)
+  skip    .claude/hooks/send-gate.mjs (not there)
+  skip    .claude/bin/approve-send.mjs (not there)
+  skip    .claude/bin/away-mode.mjs (not there)
+
+Left in place on purpose: ~/.claude/send-gate.json (your config), ~/.claude/state/send-gate/ (the log), and any settings.json backup.
+Start a new Claude Code session so the hook stops loading.
+(second uninstall above: nothing to do, no error)
+
+################ SCENARIO 5: pre-existing settings.json with other hooks ################
+
+$ node <repo>/install-gate.mjs
+Installing the send gate into $HOME/.claude
+  copy    .claude/hooks/send-gate.mjs
+  copy    .claude/bin/approve-send.mjs
+  copy    .claude/bin/away-mode.mjs
+  backup  .claude/settings.json.bak-send-gate
+  wire    PreToolUse -> send-gate.mjs
+
+Done. Next:
+  1. Run the tests: node "<repo>/tests/test-send-gate.mjs"   (expect: 0 failed)
+  2. In Claude Code, run /hooks to confirm the PreToolUse hook is listed. If it is not, start a new session.
+  3. Try it: ask Claude to send a test message through a connected mail or chat tool. It should be blocked.
+  4. To let one send through, run node ~/.claude/bin/approve-send.mjs "<recipient>" in your OWN terminal window (it asks you to type a code), then tell Claude to retry.
+PreToolUse groups: 2 | matcher Bash kept: true | PostToolUse kept: true | UserPromptSubmit kept: true | model/permissions kept: true
+  PASS  PreToolUse now has 2 groups (existing Bash one + gate) (got: 2)
+  PASS  1 send-gate entry (got: 1)
+  PASS  backup is byte-identical to original (got: yes)
+
+$ node <repo>/install-gate.mjs
+Installing the send gate into $HOME/.claude
+  keep    .claude/hooks/send-gate.mjs (already installed, identical)
+  keep    .claude/bin/approve-send.mjs (already installed, identical)
+  keep    .claude/bin/away-mode.mjs (already installed, identical)
+  keep    PreToolUse hook send-gate.mjs (already wired)
+
+Done. Next:
+  1. Run the tests: node "<repo>/tests/test-send-gate.mjs"   (expect: 0 failed)
+  2. In Claude Code, run /hooks to confirm the PreToolUse hook is listed. If it is not, start a new session.
+  3. Try it: ask Claude to send a test message through a connected mail or chat tool. It should be blocked.
+  4. To let one send through, run node ~/.claude/bin/approve-send.mjs "<recipient>" in your OWN terminal window (it asks you to type a code), then tell Claude to retry.
+  PASS  repeat install: still 1 send-gate entry (got: 1)
+
+$ node <repo>/install-gate.mjs --uninstall
+Uninstalling the send gate from $HOME/.claude
+  keep    .claude/settings.json.bak-send-gate (backup already exists)
+  unwire  PreToolUse send-gate.mjs (1 entry)
+  remove  .claude/hooks/send-gate.mjs
+  remove  .claude/bin/approve-send.mjs
+  remove  .claude/bin/away-mode.mjs
+
+Left in place on purpose: ~/.claude/send-gate.json (your config), ~/.claude/state/send-gate/ (the log), and any settings.json backup.
+Start a new Claude Code session so the hook stops loading.
+  PASS  uninstall restores settings (deep-equal to original) (got: yes)
+  PASS  0 runtime files left (got: 0)
+
+################ EXTRA A: never overwrites without --force ################
+
+$ node <repo>/install-gate.mjs
+Installing the send gate into $HOME/.claude
+  copy    .claude/hooks/send-gate.mjs
+  copy    .claude/bin/approve-send.mjs
+  keep    .claude/bin/away-mode.mjs (exists and differs; --force to replace)
+  wire    PreToolUse -> send-gate.mjs
+
+Done. Next:
+  1. Run the tests: node "<repo>/tests/test-send-gate.mjs"   (expect: 0 failed)
+  2. In Claude Code, run /hooks to confirm the PreToolUse hook is listed. If it is not, start a new session.
+  3. Try it: ask Claude to send a test message through a connected mail or chat tool. It should be blocked.
+  4. To let one send through, run node ~/.claude/bin/approve-send.mjs "<recipient>" in your OWN terminal window (it asks you to type a code), then tell Claude to retry.
+  PASS  existing away-mode.mjs untouched (got: // my own version)
+
+$ node <repo>/install-gate.mjs --uninstall
+Uninstalling the send gate from $HOME/.claude
+  backup  .claude/settings.json.bak-send-gate
+  unwire  PreToolUse send-gate.mjs (1 entry)
+  remove  .claude/hooks/send-gate.mjs
+  remove  .claude/bin/approve-send.mjs
+  keep    .claude/bin/away-mode.mjs (differs from this copy; --force to remove)
+
+Left in place on purpose: ~/.claude/send-gate.json (your config), ~/.claude/state/send-gate/ (the log), and any settings.json backup.
+Start a new Claude Code session so the hook stops loading.
+  PASS  uninstall keeps the file that differs (got: // my own version)
+
+$ node <repo>/install-gate.mjs --force
+Installing the send gate into $HOME/.claude
+  copy    .claude/hooks/send-gate.mjs
+  copy    .claude/bin/approve-send.mjs
+  copy    .claude/bin/away-mode.mjs
+  keep    .claude/settings.json.bak-send-gate (backup already exists)
+  wire    PreToolUse -> send-gate.mjs
+
+Done. Next:
+  1. Run the tests: node "<repo>/tests/test-send-gate.mjs"   (expect: 0 failed)
+  2. In Claude Code, run /hooks to confirm the PreToolUse hook is listed. If it is not, start a new session.
+  3. Try it: ask Claude to send a test message through a connected mail or chat tool. It should be blocked.
+  4. To let one send through, run node ~/.claude/bin/approve-send.mjs "<recipient>" in your OWN terminal window (it asks you to type a code), then tell Claude to retry.
+  PASS  --force replaced it (got: yes)
+
+################ EXTRA B: invalid settings.json changes nothing ################
+
+$ node <repo>/install-gate.mjs
+! $HOME/.claude/settings.json is not valid JSON. Fix it, then re-run. Nothing was changed.
+  PASS  invalid JSON exits non-zero (got: nonzero)
+  PASS  no hook files copied (got: 0)
+  PASS  settings.json untouched (got: { broken)
+
+################ EXTRA C: dry run on populated settings changes nothing ################
+
+$ node <repo>/install-gate.mjs --dry-run
+Installing the send gate into $HOME/.claude (dry run, nothing is written)
+  copy    .claude/hooks/send-gate.mjs
+  copy    .claude/bin/approve-send.mjs
+  copy    .claude/bin/away-mode.mjs
+  backup  .claude/settings.json.bak-send-gate
+  wire    PreToolUse -> send-gate.mjs
+
+Dry run only. Nothing was changed.
+  PASS  settings.json byte-identical after dry run (got: yes)
+  PASS  no files, no backup (got: 0)
+
+INSTALLER CHECKS FAILED: 0
